@@ -234,8 +234,7 @@ concourse:
     bindPort: 8080
 
     ## TLS configuration for the web component to be able to serve HTTPS traffic.
-    ## Once enabled, consumes the certificates set via secrets (`web-tls-cert` and
-    ## `web-tls-key`).
+    ## Once enabled, consumes the certificates set via secrets (`concourse-web-tls`).
     ##
     tls:
 
@@ -246,6 +245,10 @@ concourse:
       ## Port on which to listen for HTTPS traffic.
       ##
       bindPort: 443
+
+      ## Define a custom tls secret name.
+      ##
+      #secretNameOverride: "concourse-web-tls"
 
     ## URL used to reach any ATC from the outside world.
     ## This is *very* important for a proper authentication workflow as
@@ -495,6 +498,10 @@ concourse:
       ##
       database: atc
 
+      ## TLS settings
+      tls: {}
+        #secretNameOverride: "postgresql-client-tls"
+
 
     kubernetes:
       ## Enable the use of Kubernetes Secrets as the credential provider for
@@ -617,6 +624,10 @@ concourse:
       ##
       ## Example: ["/{{.Team}}/{{.Pipeline}}/{{.Secret}}", "/{{.Team}}/{{.Secret}}"]
       lookupTemplates: []
+
+      ## Vault keys secret name override
+      ##
+      #secretNameOverride: "vault-keys"
 
       ## if the Vault server is using a self-signed certificate, set this to true,
       ## and provide a value for the cert in secrets (field `vault-ca-cert`).
@@ -1294,8 +1305,8 @@ concourse:
         bindDn:
 
         ## (Required) Bind Password for the user specified by 'bindDn'
-        ##
-        bindPw:
+        ## (Deprecated) Use secret concourse-web.ldap-bindpw instead.
+        #bindPw:
 
         ## Required if LDAP host does not use TLS.
         ##
@@ -1503,6 +1514,10 @@ concourse:
         ## CA Certificate
         ##
         useCaCert:
+
+        ## Use web TLS certificate for the CA. This is useful if your web and oidc provider share
+        ## the same issuer. For instance, when using vault pki and cert-manager to issuer certificates.
+        useWebCert:
 
         ## Skip SSL validation
         ##
@@ -3062,6 +3077,7 @@ secrets:
   ## Secrets for LDAP Auth.
   ##
   ldapCaCert:
+  ldapBindPw:
 
   ## Secrets for SAML Auth.
   ##
@@ -3086,7 +3102,7 @@ secrets:
   ## Secrets for using Hashcorp Vault as a credential manager.
   ##
   ## if the Vault server is using a self-signed certificate, provide the CA public key.
-  ## the value will be written to /concourse-vault/ca.cert
+  ## the value will be written to /concourse-vault/ca.crt
   ##
   vaultCaCert:
 
@@ -3104,13 +3120,13 @@ secrets:
   vaultAuthParam:
 
   ## provide the client certificate for authenticating with the [TLS](https://www.vaultproject.io/docs/auth/cert.html) backend
-  ## the value will be written to /concourse-vault/client.cert
+  ## the value will be written to /concourse-vault/tls.crt
   ## make sure to also set credentialManager.vault.authBackend to `cert`
   ##
   vaultClientCert:
 
   ## provide the client key for authenticating with the [TLS](https://www.vaultproject.io/docs/auth/cert.html) backend
-  ## the value will be written to /concourse-vault/client.key
+  ## the value will be written to /concourse-vault/tls.key
   ## make sure to also set credentialManager.vault.authBackend to `cert`
   ##
   vaultClientKey:

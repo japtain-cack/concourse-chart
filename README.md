@@ -146,6 +146,7 @@ The following table lists the configurable parameters of the Concourse chart and
 | `secrets.hostKey` | Concourse Host Private Key | *See [values.yaml](values.yaml)* |
 | `secrets.influxdbPassword` | Password used to authenticate with influxdb | `nil` |
 | `secrets.ldapCaCert` | CA Certificate for LDAP | `nil` |
+| `secrets.ldapBindPw` | Bind password for the user specified by 'bindDn' | `nil` |
 | `secrets.localUsers` | Create concourse local users. Default username and password are `test:test` *See [values.yaml](values.yaml)* |
 | `secrets.microsoftClientId` | Client ID for Microsoft authorization. | `nil ` |
 | `secrets.microsoftClientSecret` | Client secret for Microsoft authorization. | `nil` |
