@@ -601,7 +601,7 @@ spec:
               value: {{ .Values.concourse.web.vault.authBackend | quote }}
             {{- if .Values.concourse.web.vault.useCaCert }}
             - name: CONCOURSE_VAULT_CA_CERT
-              value: "{{ .Values.web.vaultSecretsPath }}/ca.cert"
+              value: "{{ .Values.web.vaultSecretsPath }}/ca.crt"
             {{- end }}
             {{- if eq .Values.concourse.web.vault.authBackend "token" }}
             - name: CONCOURSE_VAULT_CLIENT_TOKEN
@@ -612,9 +612,9 @@ spec:
             {{- end }}
             {{- if eq .Values.concourse.web.vault.authBackend "cert" }}
             - name: CONCOURSE_VAULT_CLIENT_CERT
-              value: "{{ .Values.web.vaultSecretsPath }}/client.cert"
+              value: "{{ .Values.web.vaultSecretsPath }}/tls.crt"
             - name: CONCOURSE_VAULT_CLIENT_KEY
-              value: "{{ .Values.web.vaultSecretsPath }}/client.key"
+              value: "{{ .Values.web.vaultSecretsPath }}/tls.key"
             {{- end }}
             {{- /* Enable the AUTH_PARAM by default when secrets.vaultAuthParam is set, unless useAuthParam is explicitly set to false */}}
             {{- if and (or .Values.concourse.web.vault.useAuthParam .Values.secrets.vaultAuthParam) (ne .Values.concourse.web.vault.useAuthParam false) }}
@@ -1125,7 +1125,10 @@ spec:
             {{- end }}
             {{- if .Values.concourse.web.auth.ldap.bindPw }}
             - name: CONCOURSE_LDAP_BIND_PW
-              value: {{ .Values.concourse.web.auth.ldap.bindPw | quote }}
+              valueFrom:
+                secretKeyRef:
+                  name: {{ template "concourse.web.fullname" . }}
+                  key: ldap-bindpw
             {{- end }}
             {{- if .Values.concourse.web.auth.ldap.useCaCert }}
             - name: CONCOURSE_LDAP_CA_CERT
@@ -1333,8 +1336,13 @@ spec:
               value: {{ .Values.concourse.web.auth.oidc.groupsKey | quote}}
             {{- end }}
             {{- if .Values.concourse.web.auth.oidc.useCaCert }}
+              {{- if .Values.concourse.web.auth.oidc.useWebCert }}
             - name: CONCOURSE_OIDC_CA_CERT
               value: "{{ .Values.web.authSecretsPath }}/oidc_ca.cert"
+              {{- else }}
+            - name: CONCOURSE_OIDC_CA_CERT
+              value: "{{ .Values.web.tlsSecretsPath }}/ca.cert"
+              {{- end }}
             {{- end }}
             {{- if .Values.concourse.web.auth.oidc.skipSslValidation }}
             - name: CONCOURSE_OIDC_SKIP_SSL_VALIDATION
@@ -1602,34 +1610,32 @@ spec:
         {{- if not .Values.concourse.web.letsEncrypt.enabled }}
         - name: web-tls
           secret:
-            secretName: {{ template "concourse.web.fullname" . }}
+            secretName: {{ default "concourse-web-tls" .Values.concourse.web.tls.secretNameOverride }}
             defaultMode: 0400
             items:
-              - key: web-tls-cert
+              - key: tls.crt
                 path: client.cert
-              - key: web-tls-key
+              - key: tls.key
                 path: client.key
-              {{- if .Values.secrets.webTlsCaCert }}
-              - key: web-tls-ca-cert
+              - key: ca.crt
                 path: ca.cert
-              {{- end }}
         {{- end }}
         {{- end }}
         {{- if .Values.concourse.web.vault.enabled }}
         - name: vault-keys
           secret:
-            secretName: {{ template "concourse.web.fullname" . }}
+            secretName: {{ default "vault-keys" .Values.concourse.web.vault.secretNameOverride }}
             defaultMode: 0400
             items:
             {{- if .Values.concourse.web.vault.useCaCert }}
-              - key: vault-ca-cert
-                path: ca.cert
+              - key: ca.crt
+                path: ca.crt
             {{- end }}
             {{- if (eq .Values.concourse.web.vault.authBackend "cert") }}
-              - key: vault-client-cert
-                path: client.cert
-              - key: vault-client-key
-                path: client.key
+              - key: tls.crt
+                path: tls.crt
+              - key: tls.key
+                path: tls.key
             {{- end }}
         {{- end }}
         {{- if .Values.concourse.web.credhub.enabled }}
@@ -1657,15 +1663,15 @@ spec:
         {{- if not (eq .Values.concourse.web.postgres.sslmode "disable") }}
         - name: postgresql-keys
           secret:
-            secretName: {{ template "concourse.web.fullname" . }}
+            secretName: {{ default "postgresql-client-tls" .Values.concourse.web.postgres.tls.secretNameOverride }}
             defaultMode: 0400
             items:
-              - key: postgresql-ca-cert
-                path: ca.cert
-              - key: postgresql-client-cert
-                path: client.cert
-              - key: postgresql-client-key
-                path: client.key
+              - key: ca.crt
+                path: ca.crt
+              - key: tls.crt
+                path: tls.crt
+              - key: tls.key
+                path: tls.key
         {{- end }}
         {{- if .Values.concourse.web.syslog.enabled }}
         - name: syslog-keys

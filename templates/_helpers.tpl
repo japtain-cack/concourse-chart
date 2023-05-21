@@ -435,7 +435,7 @@ Return concourse environment variables for postgresql configuration
   valueFrom:
     secretKeyRef:
       name: {{ template "concourse.postgresql.fullname" . }}
-      key: password
+      key: postgresql-password
 - name: CONCOURSE_POSTGRES_DATABASE
   value: {{ .Values.postgresql.auth.database | quote }}
 {{- else }}
@@ -465,17 +465,17 @@ Return concourse environment variables for postgresql configuration
 - name: CONCOURSE_POSTGRES_SSLMODE
   value: {{ .Values.concourse.web.postgres.sslmode | quote }}
 {{- end }}
-{{- if .Values.secrets.postgresCaCert }}
+{{- if not (eq .Values.concourse.web.postgres.sslmode "disable") }}
 - name: CONCOURSE_POSTGRES_CA_CERT
-  value: "{{ .Values.web.postgresqlSecretsPath }}/ca.cert"
+  value: "{{ .Values.web.postgresqlSecretsPath }}/ca.crt"
 {{- end }}
-{{- if .Values.secrets.postgresClientCert }}
+{{- if not (eq .Values.concourse.web.postgres.sslmode "disable") }}
 - name: CONCOURSE_POSTGRES_CLIENT_CERT
-  value: "{{ .Values.web.postgresqlSecretsPath }}/client.cert"
+  value: "{{ .Values.web.postgresqlSecretsPath }}/tls.crt"
 {{- end }}
-{{- if .Values.secrets.postgresClientKey }}
+{{- if not (eq .Values.concourse.web.postgres.sslmode "disable") }}
 - name: CONCOURSE_POSTGRES_CLIENT_KEY
-  value: "{{ .Values.web.postgresqlSecretsPath }}/client.key"
+  value: "{{ .Values.web.postgresqlSecretsPath }}/tls.key"
 {{- end }}
 {{- if .Values.concourse.web.postgres.connectTimeout }}
 - name: CONCOURSE_POSTGRES_CONNECT_TIMEOUT
